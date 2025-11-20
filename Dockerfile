@@ -6,7 +6,6 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ⚠️ BAS YEH EK LINE HO - BAKI SAB HATAO
 RUN playwright install chromium --with-deps
 
 COPY . .
