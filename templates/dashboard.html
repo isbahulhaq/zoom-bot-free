@@ -1,26 +1,388 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Zoom Bot Dashboard</title>
-    <style>
-        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; background: #f4f4f4; }
-        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        input, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
-        button { background: #007bff; color: white; cursor: pointer; font-size: 16px; }
-        button:hover { background: #0056b3; }
-        h1 { text-align: center; color: #333; }
-    </style>
+<meta charset="UTF-8">
+<title>Zoom Dashboard (Name Type Feature)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+/* --- EXACT CSS FROM PREVIOUS DESIGN --- */
+body {
+    font-family: Arial, sans-serif;
+    background-color: black;
+    margin: 0;
+    padding: 0;
+    color: white;
+    overflow: hidden;
+}
+
+/* LOGIN SECTION */
+#loginSection {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    position: relative;
+}
+
+#particleCanvas {
+    position: absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    z-index: -1;
+}
+
+#loginBox {
+    background: rgba(18, 18, 18, 0.88);
+    padding: 24px;
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    width: 360px;
+    text-align: center;
+    z-index: 1;
+}
+#loginBox h2 { margin: 0 0 12px 0; }
+#loginBox input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 6px;
+    border: 1px solid #333;
+    background: #222;
+    color: white;
+    box-sizing: border-box;
+}
+#loginBox button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    border-radius: 6px;
+    border: none;
+    background: #4CAF50;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+}
+#loginError { color: #ff6b6b; margin-top:8px; display:none; }
+.show-pass { display:flex; align-items:center; gap:8px; justify-content:flex-start; color:#bbb; font-size:13px; margin-top:6px; }
+
+/* DASHBOARD SECTION */
+.container {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px;
+}
+.left, .center, .right {
+    background: #1a1a1a;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+.left { flex: 1; }
+.center { flex: 1; text-align: center; }
+.right { flex: 1; text-align: right; }
+
+table { width:100%; border-collapse: collapse; margin-bottom: 15px; }
+th, td { border: 1px solid #333; padding:10px; text-align:center; color:white; }
+th { background-color:#4CAF50; color:white; }
+
+.form-box {
+    margin: 15px 0;
+    padding: 15px;
+    border: 1px solid #444;
+    border-radius: 5px;
+    background: #2a2a2a;
+    text-align: center;
+}
+
+.loading-box {
+    display: none;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    background: #111;
+    border: 1px solid #333;
+    color: #00eaff;
+    font-size: 13px;
+}
+
+/* Circular Chart */
+.capacity {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 20px auto;
+    border-radius: 50%;
+    background: conic-gradient(red 0%, #1a1a1a 0%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.6s ease-in-out;
+}
+.capacity-inner {
+    position: absolute;
+    width: 160px;
+    height: 160px;
+    background: black;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+}
+.usage-info { text-align:center; margin-top:10px; font-size:16px; font-weight:bold; }
+.controls { margin-bottom:20px; }
+.controls input[type="checkbox"] { margin-right:10px; }
+
+h2, h3 { color:white; }
+
+button.small {
+    background-color: #4CAF50;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 5px;
+}
+button.danger {
+    background-color: #ff4444;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 5px;
+}
+button.small:hover { background-color: #45a049; }
+button.danger:hover { background-color: #cc0000; }
+
+/* Input and Select styling */
+input, select {
+    background-color: #333;
+    color: white;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 8px;
+    width: 85%; /* Slightly wider for better look */
+    margin-bottom: 8px;
+    outline: none;
+}
+select option {
+    background-color: #222;
+    color: white;
+}
+
+#dashboard { display: none; }
+.hidden { display: none !important; }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>🤖 Zoom Bot Dashboard - FREE TIER</h1>
-        <form>
-            <input type="text" placeholder="Meeting Code (e.g: 123456789)" required>
-            <input type="password" placeholder="Passcode" required>
-            <input type="number" placeholder="Number of Bots (1-10)" min="1" max="10" required>
-            <input type="number" placeholder="Duration Minutes (1-10)" min="1" max="10" required>
-            <button type="submit">START BOTS</button>
+
+<div id="loginSection">
+    <canvas id="particleCanvas"></canvas>
+    <div id="loginBox">
+        <h2>Login</h2>
+        <form id="loginForm">
+            <input type="email" id="email" placeholder="Email" required autocomplete="username">
+            <input type="password" id="password" placeholder="Password" required autocomplete="current-password">
+            <div class="show-pass">
+                <input type="checkbox" id="togglePass"><label for="togglePass">Show password</label>
+            </div>
+            <button type="submit">Let me in</button>
+            <p id="loginError">Invalid credentials — try again.</p>
         </form>
     </div>
+</div>
+
+<div id="dashboard">
+    <h2 style="text-align:center;">Zoom Dashboard Pro</h2>
+    
+    <div class="container" id="dashboardContainer">
+        
+        <div class="left" id="meetingsSection">
+            <h3>Active Meetings</h3>
+            <table id="meetingsTable">
+                <tr>
+                    <th>#</th>
+                    <th>ID</th>
+                    <th>Names</th>
+                    <th>Status</th>
+                </tr>
+            </table>
+        </div>
+
+        <div class="center" id="formSection">
+            <div class="form-box">
+                <h3>Add Meeting</h3>
+                <form id="meetingForm">
+                    <label>Meeting ID:</label><br>
+                    <input type="text" id="meetingId" required><br>
+                    
+                    <label>Password:</label><br>
+                    <input type="text" id="meetingPassword" required><br>
+                    
+                    <label>Members Qty:</label><br>
+                    <input type="number" id="members" min="10" step="10" required><br>
+
+                    <label style="color:#00eaff;">Member Name Type:</label><br>
+                    <select id="nameType" required>
+                        <option value="mix_all">Mix Members (All Types)</option>
+                        <option value="indian_mix">Indian Mix (Common)</option>
+                        <option value="hindu">Hindu Names (Specific)</option>
+                        <option value="muslim">Muslim Names (Specific)</option>
+                        <option value="english">English Names (USA/UK)</option>
+                        <option value="hindi">Hindi Names (Devanagari)</option>
+                    </select><br>
+                    
+                    <label>Timeout (sec):</label><br>
+                    <input type="number" id="timeout" min="60" value="120" required><br>
+
+                    <label>Wait Time (sec):</label><br>
+                    <input type="number" id="waitTime" placeholder="e.g. 5" required><br><br>
+                    
+                    <button type="submit" class="small">Start Meeting</button>
+                    <button type="button" class="danger" onclick="endMeeting()">End Meeting</button>
+                </form>
+
+                <div id="loadingBox" class="loading-box">
+                    <i>Processing Request... please wait...</i>
+                </div>
+            </div>
+        </div>
+
+        <div class="right" id="chartSection">
+            <div class="controls">
+                <input type="checkbox" id="showTable" checked> Table
+                <input type="checkbox" id="showForm" checked> Form
+                <input type="checkbox" id="showChart" checked> Chart
+            </div>
+            <h3>Capacity</h3>
+            <p>Total: 8000 Members</p>
+            <div class="capacity" id="capacityCircle">
+                <div class="capacity-inner" id="capacityText">0%</div>
+            </div>
+            <div class="usage-info" id="usageInfo">
+                Usage: 0 / 8000
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* --- PARTICLES --- */
+const canvas = document.getElementById('particleCanvas');
+const ctx = canvas.getContext('2d');
+let width = canvas.width = window.innerWidth;
+let height = canvas.height = window.innerHeight;
+window.addEventListener('resize', () => { width=canvas.width=window.innerWidth; height=canvas.height=window.innerHeight; });
+const particles = [];
+for(let i=0; i<80; i++) particles.push({x:Math.random()*width, y:Math.random()*height, r:Math.random()*3+1, dx:(Math.random()-0.5)*1.5, dy:(Math.random()-0.5)*1.5});
+function animateParticles(){
+    ctx.clearRect(0,0,width,height);
+    for(let p of particles){
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle="rgba(0,200,255,0.75)"; ctx.fill();
+        p.x+=p.dx; p.y+=p.dy;
+        if(p.x<0||p.x>width)p.dx*=-1; if(p.y<0||p.y>height)p.dy*=-1;
+    }
+    requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+/* --- LOGIN --- */
+const FIXED_EMAIL = "isbahaulhaq692@gmail.com";
+const FIXED_PASSWORD = "20140204547";
+document.getElementById('togglePass').addEventListener('change', function() { document.getElementById('password').type = this.checked ? 'text' : 'password'; });
+document.getElementById('loginForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    if(document.getElementById('email').value.trim() === FIXED_EMAIL && document.getElementById('password').value.trim() === FIXED_PASSWORD){
+        document.getElementById('loginSection').style.display='none';
+        document.getElementById('dashboard').style.display='block';
+    } else document.getElementById('loginError').style.display='block';
+});
+
+/* --- DASHBOARD TOGGLES --- */
+document.getElementById('showTable').addEventListener('change', e => document.getElementById('meetingsSection').classList.toggle('hidden', !e.target.checked));
+document.getElementById('showForm').addEventListener('change', e => document.getElementById('formSection').classList.toggle('hidden', !e.target.checked));
+document.getElementById('showChart').addEventListener('change', e => document.getElementById('chartSection').classList.toggle('hidden', !e.target.checked));
+
+/* --- BACKEND LOGIC (With Name Selector) --- */
+const loadingBox = document.getElementById("loadingBox");
+
+function updateChart(usage) {
+    const total = 8000;
+    let percentage = Math.round((usage / total) * 100);
+    if(percentage > 100) percentage = 100;
+    document.getElementById('capacityCircle').style.background = `conic-gradient(red ${percentage}%, #1a1a1a 0%)`;
+    document.getElementById('capacityText').innerText = percentage + "%";
+    document.getElementById('usageInfo').innerHTML = `Usage: ${usage} / ${total}`;
+}
+
+document.getElementById("meetingForm").addEventListener("submit", async function(e){
+    e.preventDefault();
+    loadingBox.style.display = "block";
+
+    // Gather Values
+    let id = document.getElementById('meetingId').value;
+    let pass = document.getElementById('meetingPassword').value;
+    let mem = document.getElementById('members').value;
+    let tOut = document.getElementById('timeout').value;
+    let wait = document.getElementById('waitTime').value;
+    let nType = document.getElementById('nameType').value; // Get Selected Name Type
+
+    updateChart(parseInt(mem));
+
+    try {
+        // 1. GET Request (Updated with name_type)
+        // Python backend should read 'name_type' query param
+        await fetch(`/start?meetingid=${id}&password=${pass}&waittime=${wait}&name_type=${nType}`);
+
+        // 2. POST Request (Updated with name_type)
+        const formData = new FormData();
+        formData.append('meeting_id', id);
+        formData.append('password', pass);
+        formData.append('members', mem);
+        formData.append('timeout', tOut);
+        formData.append('name_type', nType); // Sending Name Type to Backend
+
+        await fetch('/join', { method: "POST", body: formData });
+
+        alert("Meeting Started with: " + nType.toUpperCase() + " Names");
+        
+        // Update Table
+        const table = document.getElementById('meetingsTable');
+        let row = table.insertRow(1);
+        row.insertCell(0).innerHTML = "#";
+        row.insertCell(1).innerHTML = id;
+        row.insertCell(2).innerHTML = nType; // Show which names used
+        row.insertCell(3).innerHTML = "Active";
+
+    } catch (err) {
+        alert("Request Sent! (Backend disconnected in preview)");
+    } finally {
+        loadingBox.style.display = "none";
+    }
+});
+
+async function endMeeting(){
+    if(!confirm("End all meetings?")) return;
+    loadingBox.style.display = "block";
+    try {
+        let res = await fetch('/end');
+        let data = await res.json();
+        alert(data.message || "Ended");
+        updateChart(0);
+    } catch (err) {
+        alert("Ended");
+        updateChart(0);
+    } finally {
+        loadingBox.style.display = "none";
+    }
+}
+</script>
 </body>
 </html>
